@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>THE FEED — Session Interrupted</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#C8281E;--blue:#3060D0;--yellow:#E8B800}
+html,body{height:100%}
+body{
+  background:#080706;color:#DDD5C8;
+  font-family:'Syne',sans-serif;
+  max-width:390px;margin:0 auto;min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:2.5rem 1.5rem;text-align:center;
+  overflow:hidden;position:relative;
+}
+
+/* p5 canvas fills background */
+#signal-canvas{
+  position:fixed;top:0;left:0;
+  width:100%;height:100%;
+  z-index:0;pointer-events:none;
+}
+
+/* layered overlays */
+/* vignette */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at center, transparent 30%, rgba(4,3,2,0.85) 100%);
+  pointer-events:none;z-index:2;
+}
+/* grain */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:3;opacity:0.35;
+}
+
+.c{
+  position:relative;z-index:10;width:100%;
+  animation:cfade 0.8s ease both;
+}
+@keyframes cfade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.icon{
+  font-size:2.5rem;margin-bottom:1.6rem;
+  animation:blink 2.2s step-end infinite;
+  display:block;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.08}}
+
+.title{
+  font-size:1.25rem;font-weight:800;letter-spacing:-0.04em;line-height:1.2;
+  margin-bottom:0.9rem;position:relative;color:#DDD5C8;
+}
+/* glitch layers */
+.title::before{
+  content:attr(data-t);position:absolute;left:2px;top:0;
+  color:var(--red);opacity:0;clip-path:inset(20% 0 60% 0);
+  animation:g1 3.8s infinite;
+}
+.title::after{
+  content:attr(data-t);position:absolute;left:-2px;top:0;
+  color:var(--blue);opacity:0;clip-path:inset(60% 0 20% 0);
+  animation:g2 4.5s infinite;
+}
+@keyframes g1{0%,88%,100%{opacity:0;transform:translateX(0)}90%{opacity:0.8;transform:translate(-3px,0)}92%{opacity:0;transform:translate(2px,0)}}
+@keyframes g2{0%,85%,100%{opacity:0;transform:translateX(0)}87%{opacity:0.7;transform:translate(3px,0)}89%{opacity:0}}
+
+.sub{
+  font-family:'Courier Prime',monospace;
+  font-size:0.67rem;color:#524E4A;
+  line-height:1.7;margin-bottom:1.8rem;
+}
+
+/* CASE BOX */
+.case{
+  background:#0C0A08;
+  border:1px solid #1A1816;
+  border-left:2px solid #282420;
+  padding:0.8rem 1rem;
+  font-family:'Courier Prime',monospace;font-size:0.6rem;
+  color:#353230;text-align:left;width:100%;
+  line-height:2;margin-bottom:1.8rem;
+  position:relative;overflow:hidden;
+}
+/* subtle scan line inside case box */
+.case::after{
+  content:'';position:absolute;
+  top:0;left:0;right:0;
+  height:1px;background:rgba(220,40,30,0.15);
+  animation:scan 3s linear infinite;
+}
+@keyframes scan{0%{transform:translateY(0)}100%{transform:translateY(100px)}}
+
+.case-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:1px solid #161412;padding:0.15rem 0;
+}
+.case-row:last-child{border-bottom:none}
+.case-label{color:#2A2826}
+.case-val{
+  color:#3A3632;font-weight:700;
+  animation:valflicker 6s infinite;
+}
+@keyframes valflicker{0%,90%,100%{opacity:1}91%{opacity:0.3}93%{opacity:1}95%{opacity:0.2}97%{opacity:1}}
+
+.fine{
+  font-family:'Courier Prime',monospace;font-size:0.5rem;
+  color:#181614;line-height:1.8;text-align:left;
+  width:100%;margin-bottom:1.6rem;
+}
+
+/* BUTTONS */
+.rbtn{
+  width:100%;padding:0.88rem;
+  background:#141210;color:#DDD5C8;
+  border:1px solid #282420;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;
+  letter-spacing:0.08em;text-transform:uppercase;
+  cursor:pointer;border-radius:0;
+  /* deliberately slightly misaligned — subliminal */
+  transform:translateX(3px);
+  transition:background 0.2s,border-color 0.2s,transform 0.2s;
+  margin-bottom:0.75rem;text-decoration:none;display:block;
+}
+.rbtn:hover{background:#1E1C19;border-color:#383430;transform:translateX(0)}
+
+.end-link{
+  font-family:'Courier Prime',monospace;font-size:0.62rem;
+  color:#242220;text-decoration:none;
+  transition:color 0.2s;display:block;
+  letter-spacing:0.02em;
+}
+.end-link:hover{color:var(--red)}
+
+hr{width:100%;border:none;border-top:1px solid #141210;margin:1.4rem 0}
+
+/* status dot */
+.status-row{
+  display:flex;align-items:center;justify-content:center;gap:0.5rem;
+  font-family:'Courier Prime',monospace;font-size:0.55rem;
+  color:#252220;margin-bottom:2rem;letter-spacing:0.06em;
+}
+.s-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--red);
+  animation:blink 1.4s step-end infinite;
+}
+</style>
+</head>
+<body>
+
+<canvas id="signal-canvas"></canvas>
+
+<div class="c">
+  <span class="icon">⛔</span>
+  <div class="title" data-t="Your session has been interrupted.">Your session has been interrupted.</div>
+  <div class="sub">The account you were viewing has been suspended for violating our Terms of Service. Content from this account is no longer accessible.</div>
+
+  <div class="case">
+    <div class="case-row"><span class="case-label">Appeal ID</span><span class="case-val">#FF-2847-X</span></div>
+    <div class="case-row"><span class="case-label">Submitted</span><span class="case-val">—</span></div>
+    <div class="case-row"><span class="case-label">Status</span><span class="case-val">Pending review</span></div>
+    <div class="case-row"><span class="case-label">Est. response</span><span class="case-val">90 business days</span></div>
+    <div class="case-row"><span class="case-label">Account</span><span class="case-val">resist_now_4412X</span></div>
+  </div>
+
+  <div class="status-row">
+    <div class="s-dot"></div>
+    <span>SESSION MONITORING ACTIVE</span>
+  </div>
+
+  <a class="rbtn" href="feed.html">← Return to Feed</a>
+  <a class="end-link" href="banned.html">This happened to my account too →</a>
+
+  <hr>
+
+  <div class="fine">Under Platform Terms §11.3, suspended accounts may not be accessed by third parties. Continued attempts may result in action against your own account. Suspension decisions are made by automated systems under applicable law. THE FEED CORPORATION reserves the right to remove any content or account at its sole discretion without prior notice. All decisions are final pending review. Class action rights waived. Binding arbitration required. Delaware jurisdiction.</div>
+</div>
+
+<script>
+// p5 broken signal / CRT interference
+new p5(function(s){
+  var W,H;
+  var glitchLines=[];
+  var staticBands=[];
+  var timer=0;
+  var glitchActive=false;
+
+  s.setup=function(){
+    var cnv=s.createCanvas(window.innerWidth,window.innerHeight);
+    cnv.parent('signal-canvas');
+    W=s.width;H=s.height;
+    s.colorMode(s.RGB,255,255,255,255);
+  };
+
+  s.windowResized=function(){
+    s.resizeCanvas(window.innerWidth,window.innerHeight);
+    W=s.width;H=s.height;
+  };
+
+  s.draw=function(){
+    s.background(8,7,6,255);
+
+    // subtle horizontal static bands (always present, faint)
+    for(var i=0;i<H;i+=4){
+      var n=s.noise(i*0.02, s.frameCount*0.008)*255;
+      s.stroke(n*0.08,n*0.07,n*0.06,8);
+      s.strokeWeight(1);
+      s.line(0,i,W,i);
+    }
+
+    // vertical scan line
+    s.noStroke();
+    s.fill(200,190,180,6);
+    var sx=(s.frameCount*1.8)%W;
+    s.rect(sx,0,1,H);
+
+    // glitch event
+    timer++;
+    if(timer>s.random(90,240)){
+      glitchActive=true;
+      timer=0;
+      // spawn glitch lines
+      var count=s.floor(s.random(2,8));
+      for(var j=0;j<count;j++){
+        glitchLines.push({
+          y:s.random(H),
+          w:s.random(20,W*0.6),
+          x:s.random(W*0.4),
+          life:s.floor(s.random(4,14)),
+          color:[s.random(150,220),s.random(30,80),s.random(20,60)]
+        });
+      }
+    }
+    if(glitchActive&&timer>12) glitchActive=false;
+
+    // draw glitch lines
+    for(var k=glitchLines.length-1;k>=0;k--){
+      var gl=glitchLines[k];
+      s.noStroke();
+      s.fill(gl.color[0],gl.color[1],gl.color[2],35);
+      s.rect(gl.x,gl.y,gl.w,s.random(1,3));
+      gl.life--;
+      if(gl.life<=0) glitchLines.splice(k,1);
+    }
+
+    // CRT corner vignette (very faint)
+    s.noFill();
+    for(var r=0;r<6;r++){
+      var a=s.map(r,0,6,0,18);
+      s.stroke(0,0,0,a);
+      s.strokeWeight(r*8);
+      s.rect(0,0,W,H);
+    }
+  };
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>THE FEED — Account Removed</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#C8281E;--blue:#3060D0;--accent:#B89868}
+html,body{height:100%}
+body{
+  background:#060504;color:#DDD5C8;
+  font-family:'Syne',sans-serif;
+  max-width:390px;margin:0 auto;min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:3rem 1.5rem 5rem;text-align:center;
+  position:relative;overflow:hidden;
+}
+
+#decay-canvas{
+  position:fixed;top:0;left:0;
+  width:100%;height:100%;
+  z-index:0;pointer-events:none;
+}
+
+/* heavy grain overlay */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:1;
+}
+/* vignette */
+body::after{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at center,transparent 25%,rgba(4,3,2,0.88) 100%);
+  pointer-events:none;z-index:2;
+}
+
+.c{
+  position:relative;z-index:10;width:100%;
+  animation:cfade 1s ease both;
+}
+@keyframes cfade{from{opacity:0}to{opacity:1}}
+
+/* AVATAR */
+.b-av{
+  width:76px;height:76px;border-radius:50%;
+  overflow:hidden;margin:0 auto 2rem;
+  background:#0E0C0A;
+  position:relative;
+}
+.b-av img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  filter:grayscale(1) blur(1.2px) brightness(0.38);
+  image-rendering:pixelated;
+  animation:avg 5.5s infinite;
+}
+@keyframes avg{
+  0%,88%,100%{filter:grayscale(1) blur(1.2px) brightness(0.38)}
+  90%{filter:grayscale(0) blur(2px) brightness(0.22) hue-rotate(100deg)}
+  92%{filter:grayscale(1) blur(0) brightness(0.5)}
+  94%{filter:grayscale(1) blur(1.2px) brightness(0.38)}
+}
+/* ring that pulses */
+.b-av::after{
+  content:'';position:absolute;inset:-3px;
+  border-radius:50%;
+  border:1px solid rgba(200,40,30,0.2);
+  animation:ring 3s ease infinite;
+}
+@keyframes ring{
+  0%,100%{opacity:0.2;transform:scale(1)}
+  50%{opacity:0.6;transform:scale(1.03)}
+}
+
+/* GLITCH TITLE */
+.title{
+  font-size:1.3rem;font-weight:800;letter-spacing:-0.04em;line-height:1.2;
+  margin-bottom:1rem;color:#DDD5C8;position:relative;
+}
+.title::before{
+  content:attr(data-t);position:absolute;left:2px;top:0;
+  color:var(--red);opacity:0;clip-path:inset(20% 0 60% 0);
+  animation:g1 5.5s infinite;
+}
+.title::after{
+  content:attr(data-t);position:absolute;left:-2px;top:0;
+  color:var(--blue);opacity:0;clip-path:inset(60% 0 20% 0);
+  animation:g2 6s infinite;
+}
+@keyframes g1{0%,88%,100%{opacity:0}90%{opacity:0.85;transform:translate(-3px,0)}92%{opacity:0}}
+@keyframes g2{0%,85%,100%{opacity:0}87%{opacity:0.75;transform:translate(3px,0)}89%{opacity:0}}
+
+/* TAGS */
+.tags{
+  display:flex;flex-wrap:wrap;gap:0.4rem;
+  justify-content:center;margin-bottom:1.6rem;
+}
+.tag{
+  font-family:'Courier Prime',monospace;font-size:0.53rem;
+  padding:0.18rem 0.42rem;background:#0C0A08;
+  color:#2A2826;border:1px solid #161412;
+  text-decoration:line-through;
+  opacity:0;animation:tpop 0.25s ease forwards;
+  text-decoration-color:rgba(200,40,30,0.4);
+}
+@keyframes tpop{to{opacity:1}}
+
+/* REASON BOX */
+.reason{
+  background:#0A0806;color:#302E2A;
+  font-family:'Courier Prime',monospace;font-size:0.63rem;
+  padding:0.9rem 1rem;
+  text-align:left;border-left:2px solid var(--red);
+  width:100%;line-height:1.8;margin-bottom:1.4rem;
+}
+.reason-row{display:flex;justify-content:space-between;gap:1rem;margin-bottom:0.1rem}
+.reason-label{color:#252220}
+.reason-val{color:#3A3632;font-weight:700}
+
+/* LEGAL */
+.legal{
+  font-family:'Courier Prime',monospace;font-size:0.48rem;
+  color:#101010;line-height:1.8;text-align:left;
+  width:100%;margin-bottom:1.8rem;
+  transition:color 1s;cursor:default;
+}
+.legal:hover{color:#1E1C18}
+
+hr{width:100%;border:none;border-top:1px solid #141210;margin:1.4rem 0}
+
+/* REVEAL */
+.reveal{
+  font-family:'Courier Prime',monospace;
+  font-size:0.75rem;font-style:italic;
+  color:#0C0C0A;line-height:2;
+  transition:color 3s;width:100%;
+  letter-spacing:0.02em;
+}
+.reveal.lit{color:#504840}
+.reveal strong{color:#706050}
+
+/* RESTART */
+.restart{
+  font-family:'Courier Prime',monospace;font-size:0.57rem;
+  color:#141210;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px;
+  margin-top:2.5rem;background:none;border:none;
+  transition:color 3s;display:block;
+  letter-spacing:0.06em;
+}
+.restart.lit{color:#302E2A}
+.restart.lit:hover{color:#7A746C}
+</style>
+</head>
+<body>
+
+<canvas id="decay-canvas"></canvas>
+
+<div class="c">
+  <div class="b-av">
+    <img src="https://i.pravatar.cc/152?img=22" alt="">
+  </div>
+
+  <div class="title" data-t="Your account has been permanently removed.">
+    Your account has been permanently removed.
+  </div>
+
+  <div class="tags" id="tags"></div>
+
+  <div class="reason">
+    <div class="reason-row"><span class="reason-label">Reason</span><span class="reason-val">Repeated policy violations</span></div>
+    <div class="reason-row"><span class="reason-label">Policy §4.2.1</span><span class="reason-val">Coordinated Inauthentic Behavior</span></div>
+    <div class="reason-row"><span class="reason-label">Policy §9.1</span><span class="reason-val">Unauthorized Documentation</span></div>
+    <div class="reason-row"><span class="reason-label">Policy §7.4</span><span class="reason-val">Sensitive Political Content</span></div>
+    <div class="reason-row"><span class="reason-label">Account ID</span><span class="reason-val">resist_now_4412X</span></div>
+    <div class="reason-row"><span class="reason-label">Removal</span><span class="reason-val">permanent · appeal closed</span></div>
+  </div>
+
+  <div class="legal">
+    The Platform's decision to remove your account is final and binding under the Terms of Service you agreed to upon registration (§2.1, §11.3, §14.7). THE FEED CORPORATION, its affiliates, subsidiaries, officers, directors, employees, agents, licensors, and service providers make no warranties, express or implied, regarding the accuracy, reliability, or completeness of content moderation decisions. Removal of accounts and content is performed by automated systems and human reviewers acting in good faith under applicable law including but not limited to the Communications Decency Act §230, FOSTA-SESTA, and applicable state regulations. You acknowledge that THE FEED CORPORATION has no obligation to preserve, archive, or transmit your content or account data. Any data associated with your account has been scheduled for deletion per our data retention policy (§16.2). Legal disputes must be resolved through binding arbitration in Delaware. Class action waived. You have no further recourse.
+  </div>
+
+  <hr>
+
+  <div class="reveal" id="reveal">
+    "the feed is the weapon.<br>
+    <strong>you were right all along.</strong>"
+  </div>
+
+  <button class="restart" id="restart" onclick="location.href='index.html'">← start over</button>
+</div>
+
+<script>
+// Topic tags — censored feminist / accountability topics
+var topics=[
+  '#feminism','#womenrights','#manosphere','#censorship',
+  '#genderbasedviolence','#accountability','#pressfreedom',
+  '#shadowban','#algorithmicbias','#ICE','#immigration',
+  '#sayhername','#BLM','#researchsuppression',
+  '#38thAndChicago','#executiveorder','#deportation'
+];
+
+$(function(){
+  topics.forEach(function(t,i){
+    setTimeout(function(){
+      $('#tags').append('<div class="tag" style="animation-delay:0s">'+t+'</div>');
+    },i*110);
+  });
+  var totalDelay=topics.length*110+400;
+  setTimeout(function(){$('#reveal').addClass('lit')},totalDelay);
+  setTimeout(function(){$('#restart').addClass('lit')},totalDelay+2000);
+});
+
+// p5 entropy particle decay
+new p5(function(s){
+  var particles=[];
+  var W,H;
+
+  s.setup=function(){
+    var cnv=s.createCanvas(window.innerWidth,window.innerHeight);
+    cnv.parent('decay-canvas');
+    W=s.width;H=s.height;
+    s.colorMode(s.RGB,255,255,255,255);
+    // seed particles
+    for(var i=0;i<180;i++){
+      spawn();
+    }
+  };
+
+  function spawn(){
+    particles.push({
+      x:s.random(W),
+      y:s.random(H),
+      vx:s.random(-0.3,0.3),
+      vy:s.random(-0.5,-0.05),
+      size:s.random(0.5,2.5),
+      alpha:s.random(8,45),
+      life:s.random(60,220),
+      maxLife:0,
+      decay:s.random(0.15,0.55),
+      type:s.floor(s.random(3)) // 0=dot 1=dash 2=pixel
+    });
+    particles[particles.length-1].maxLife=particles[particles.length-1].life;
+  }
+
+  s.windowResized=function(){
+    s.resizeCanvas(window.innerWidth,window.innerHeight);
+    W=s.width;H=s.height;
+  };
+
+  s.draw=function(){
+    s.background(6,5,4,255);
+
+    // re-spawn to maintain count
+    while(particles.length<200) spawn();
+
+    for(var i=particles.length-1;i>=0;i--){
+      var p=particles[i];
+      p.x+=p.vx;
+      p.y+=p.vy;
+      p.life-=p.decay;
+
+      var a=s.map(p.life,0,p.maxLife,0,p.alpha);
+      a=s.constrain(a,0,60);
+
+      s.noStroke();
+
+      // mostly warm grey-brown tones, occasional red flicker
+      var cr,cg,cb;
+      if(s.frameCount%200<5&&s.random()<0.3){
+        cr=180;cg=35;cb=20;
+      } else {
+        cr=s.random(150,200);
+        cg=s.random(130,180);
+        cb=s.random(100,150);
+      }
+
+      s.fill(cr,cg,cb,a);
+
+      if(p.type===0){
+        s.ellipse(p.x,p.y,p.size,p.size);
+      } else if(p.type===1){
+        s.rect(p.x,p.y,p.size*3,p.size*0.7);
+      } else {
+        s.rect(p.x,p.y,p.size,p.size);
+      }
+
+      if(p.life<=0) particles.splice(i,1);
+    }
+  };
+});
+</script>
+
+</body>
+</html>

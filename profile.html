@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>THE FEED — @resist_now</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Courier+Prime:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#141210;
+  --surface:#1C1A17;
+  --surface2:#222019;
+  --text:#E4DDD0;
+  --muted:#6A6460;
+  --border:#2C2A27;
+  --border2:#383430;
+  --red:#C8281E;
+  --yellow:#E8B800;
+  --black:#080706;
+  --accent:#B89868;
+}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  max-width:390px;margin:0 auto;min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* p5 canvas for avatar noise border */
+#avatar-canvas{
+  position:absolute;
+  top:-6px;left:-6px;
+  width:90px;height:90px;
+  pointer-events:none;
+  z-index:2;
+}
+
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(20,18,16,0.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.75rem 1rem;
+}
+.back{
+  background:none;border:none;cursor:pointer;
+  font-size:1rem;font-weight:700;color:var(--text);
+  font-family:'Syne',sans-serif;opacity:0.75;
+  transition:opacity 0.15s;padding:0.2rem 0.4rem;
+}
+.back:hover{opacity:1}
+.nav-title{font-family:'Syne',sans-serif;font-weight:700;font-size:0.92rem;color:var(--text)}
+.nav-more{color:var(--muted);font-size:1.1rem;cursor:pointer;opacity:0.5;transition:opacity 0.15s}
+.nav-more:hover{opacity:0.9}
+
+/* FLAG BANNER */
+.flag-bar{
+  background:#160C00;color:var(--yellow);
+  font-family:'Courier Prime',monospace;font-size:0.6rem;
+  padding:0.5rem 1rem;letter-spacing:0.03em;
+  border-bottom:1px solid #2A1800;line-height:1.5;
+}
+
+/* PROFILE HEADER */
+.profile-head{
+  display:flex;gap:1rem;align-items:flex-start;
+  padding:1.4rem 1rem 0.9rem;
+}
+.p-av-wrap{
+  position:relative;
+  width:78px;height:78px;flex-shrink:0;
+}
+.p-av{
+  width:78px;height:78px;border-radius:50%;overflow:hidden;
+  background:var(--border);position:relative;z-index:1;
+}
+.p-av img{
+  width:100%;height:100%;object-fit:cover;
+  image-rendering:pixelated;
+  filter:blur(0.3px) grayscale(0.2);
+  display:block;
+}
+.review-badge{
+  position:absolute;bottom:2px;right:-2px;z-index:3;
+  background:var(--yellow);color:var(--black);
+  font-size:0.44rem;padding:1px 3px;
+  font-weight:700;font-family:'Courier Prime',monospace;
+  letter-spacing:0.06em;white-space:nowrap;
+}
+.p-info{flex:1;min-width:0}
+.p-name{
+  font-family:'Syne',sans-serif;font-weight:800;
+  font-size:1.05rem;color:var(--text);
+}
+.p-handle{
+  font-family:'Courier Prime',monospace;
+  font-size:0.68rem;color:var(--muted);margin:0.08rem 0;
+}
+.p-bio{
+  font-size:0.78rem;line-height:1.6;
+  margin-top:0.5rem;color:var(--text);
+}
+.p-flag{
+  font-family:'Courier Prime',monospace;
+  font-size:0.6rem;color:var(--red);
+  margin-top:0.22rem;display:block;
+}
+
+/* STATS */
+.stats{
+  display:flex;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  margin:0.8rem 0 0;
+}
+.stat{
+  flex:1;text-align:center;padding:0.7rem 0;
+  border-right:1px solid var(--border);
+  transition:background 0.15s;
+}
+.stat:last-child{border-right:none}
+.stat:hover{background:rgba(255,255,255,0.02)}
+.sn{
+  font-family:'Syne',sans-serif;font-weight:800;
+  font-size:0.95rem;display:block;color:var(--text);
+}
+.sn.dim{color:var(--muted)}
+.sl{
+  font-size:0.57rem;color:var(--muted);
+  font-family:'Courier Prime',monospace;
+  text-transform:uppercase;letter-spacing:0.07em;
+}
+
+/* ACTIONS */
+.actions{display:flex;gap:0.5rem;padding:0.85rem 1rem}
+.btn-f{
+  flex:1;padding:0.52rem;
+  background:var(--muted);color:var(--bg);
+  font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;
+  border:none;cursor:not-allowed;border-radius:0;opacity:0.45;
+}
+.btn-m{
+  flex:1;padding:0.52rem;
+  background:none;color:var(--text);
+  font-family:'Syne',sans-serif;font-weight:700;font-size:0.76rem;
+  border:1px solid var(--border2);cursor:pointer;border-radius:0;
+  transition:border-color 0.15s,background 0.15s;
+}
+.btn-m:hover{border-color:var(--accent);background:rgba(255,255,255,0.02)}
+
+/* GRID LABEL */
+.grid-label{
+  font-family:'Courier Prime',monospace;font-size:0.6rem;
+  color:var(--muted);padding:0.5rem 1rem;
+  letter-spacing:0.08em;text-transform:uppercase;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.grid-label span{color:var(--red);font-size:0.56rem}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.gi{aspect-ratio:1;overflow:hidden;position:relative;background:#181614}
+.gi img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  transition:filter 0.2s,transform 0.25s;
+}
+.gi:hover img{filter:brightness(0.82);transform:scale(1.04)}
+.gi.main-post{cursor:pointer}
+.gi.main-post::before{
+  content:'↗';
+  position:absolute;top:6px;right:7px;z-index:2;
+  font-size:0.72rem;color:white;
+  background:rgba(0,0,0,0.55);
+  padding:1px 4px;border-radius:1px;
+  opacity:0;transition:opacity 0.2s;
+}
+.gi.main-post:hover::before{opacity:1}
+.gi.rm{
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:0.28rem;
+  color:var(--muted);font-family:'Courier Prime',monospace;
+  font-size:0.5rem;text-align:center;
+}
+.gi.rm .ri{font-size:1.2rem;opacity:0.35}
+.gi.lk img{filter:grayscale(1) brightness(0.42)}
+.gi.lk::after{
+  content:"🔒";position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);font-size:1.2rem;opacity:0.5;
+}
+
+/* WARNING SECTION */
+.warn-section{
+  margin:1.5rem 1rem;
+  background:#100800;
+  border:1px solid #2A1800;
+  border-left:3px solid var(--red);
+  padding:0.85rem 1rem;
+  font-family:'Courier Prime',monospace;
+  font-size:0.62rem;color:rgba(232,184,0,0.55);
+  line-height:1.65;
+}
+.warn-section strong{color:var(--yellow)}
+
+/* NEXT BUTTON */
+.next-btn{
+  display:block;margin:0.5rem 1rem 4.5rem;
+  background:var(--red);color:white;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;
+  letter-spacing:0.07em;text-transform:uppercase;
+  border:none;padding:0.9rem 2rem;cursor:pointer;border-radius:0;
+  text-decoration:none;text-align:center;
+  width:calc(100% - 2rem);
+  animation:rp 2.8s infinite alternate;
+  transition:background 0.15s;
+}
+.next-btn:hover{background:#A82018}
+@keyframes rp{from{opacity:1}to{opacity:0.68}}
+
+.bnav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:390px;max-width:100vw;
+  background:rgba(20,18,16,0.97);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:0.6rem 0 calc(0.6rem + env(safe-area-inset-bottom,0px));z-index:100;
+}
+.nb{
+  background:none;border:none;cursor:pointer;
+  font-size:1.15rem;opacity:0.3;padding:0.2rem 0.5rem;color:var(--text);
+  transition:opacity 0.2s,transform 0.12s;
+}
+.nb:hover{opacity:0.7;transform:scale(1.1)}
+.nb.act{opacity:1}
+.sp{height:120px}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <button class="back" onclick="history.back()">←</button>
+  <div class="nav-title">resist_now</div>
+  <div class="nav-more">⋮</div>
+</nav>
+
+<div class="flag-bar">⚠ This account has been flagged for review under Policy §9.1. Content distribution is restricted.</div>
+
+<div class="profile-head">
+  <div class="p-av-wrap">
+    <canvas id="avatar-canvas"></canvas>
+    <div class="p-av">
+      <img src="https://i.pravatar.cc/156?img=22" alt="resist_now">
+    </div>
+    <div class="review-badge">UNDER REVIEW</div>
+  </div>
+  <div class="p-info">
+    <div class="p-name">R. Osei</div>
+    <div class="p-handle">@resist_now</div>
+    <div class="p-bio">
+      Independent researcher. Documenting algorithmic suppression of feminist content. Miami → Chicago.
+      <span class="p-flag">[account under review — policy §9.1 / §4.2.1]</span>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="sn">62</span><span class="sl">Posts</span></div>
+  <div class="stat"><span class="sn dim">—</span><span class="sl">Followers</span></div>
+  <div class="stat"><span class="sn dim">—</span><span class="sl">Following</span></div>
+</div>
+
+<div class="actions">
+  <button class="btn-f" disabled>Restricted</button>
+  <button class="btn-m">Message</button>
+</div>
+
+<div class="grid-label">Posts <span>9 removed · 5 restricted</span></div>
+
+<div class="grid">
+  <div class="gi"><img src="https://picsum.photos/seed/gp1/130/130" alt=""></div>
+  <div class="gi rm"><div class="ri">🚫</div><div>Removed</div></div>
+  <!-- imagethree.webp — clicking goes to post.html -->
+  <div class="gi main-post" onclick="location.href='post.html'" title="View post">
+    <img src="imagethree.webp" alt="Women's rights post"
+         onerror="this.src='https://picsum.photos/seed/womenrights/130/130'">
+  </div>
+  <div class="gi rm"><div class="ri">🚫</div><div>Removed</div></div>
+  <div class="gi"><img src="https://picsum.photos/seed/gp5/130/130" alt=""></div>
+  <div class="gi"><img src="https://picsum.photos/seed/gp6/130/130" alt=""></div>
+  <div class="gi lk"><img src="https://picsum.photos/seed/gp7/130/130" alt=""></div>
+  <div class="gi rm"><div class="ri">🚫</div><div>Removed</div></div>
+  <div class="gi lk"><img src="https://picsum.photos/seed/gp9/130/130" alt=""></div>
+</div>
+
+<div class="warn-section">
+  <strong>Content Moderation Summary</strong><br>
+  9 posts removed under §9.1 (Sensitive Social Content) and §4.2 (Political Content Amplification). 5 posts restricted to approved followers only. External links to research publications have been automatically removed from all posts. This account has been flagged for coordinated distribution of politically sensitive content.
+</div>
+
+<!-- Goes to banned.html -->
+<a class="next-btn" href="banned.html">⚠ This account has been permanently actioned →</a>
+
+<div class="sp"></div>
+
+<nav class="bnav">
+  <button class="nb" onclick="location.href='feed.html'">🏠</button>
+  <button class="nb">🔍</button>
+  <button class="nb">➕</button>
+  <button class="nb">📊</button>
+  <button class="nb act">👤</button>
+</nav>
+
+<script>
+// p5 pixelated noise border around avatar
+new p5(function(s){
+  var SIZE=90;
+  s.setup=function(){
+    var cnv=s.createCanvas(SIZE,SIZE);
+    cnv.parent('avatar-canvas');
+    s.colorMode(s.RGB,255,255,255,255);
+    s.noFill();
+  };
+  s.draw=function(){
+    s.clear();
+    var t=s.millis()*0.001;
+    // draw noisy circle border
+    var cx=SIZE/2, cy=SIZE/2, r=36;
+    for(var i=0;i<360;i+=3){
+      var angle=s.radians(i);
+      var nval=s.noise(Math.cos(angle)*0.8+t*0.3, Math.sin(angle)*0.8+t*0.2)*1;
+      var rr=r+nval*8-4;
+      var x=cx+Math.cos(angle)*rr;
+      var y=cy+Math.sin(angle)*rr;
+      var alpha=s.map(nval,0,1,20,90);
+      // color flickers between accent and red
+      if(s.frameCount%120<10){
+        s.stroke(200,40,30,alpha);
+      } else {
+        s.stroke(184,152,104,alpha*0.7);
+      }
+      s.strokeWeight(1.2);
+      s.point(x,y);
+    }
+  };
+});
+</script>
+
+</body>
+</html>

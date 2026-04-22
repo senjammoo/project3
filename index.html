@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>THE FEED</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F0D0B;
+  --text:#E8E0D0;
+  --muted:#4A4642;
+  --red:#C8281E;
+  --accent:#C4A882;
+}
+
+html,body{height:100%;overflow:hidden}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Syne',sans-serif;
+  max-width:390px;
+  margin:0 auto;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:2rem 1.5rem;
+  text-align:center;
+  position:relative;
+  cursor:crosshair;
+}
+
+/* p5 canvas sits behind everything */
+#p5-canvas{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  z-index:0;
+  pointer-events:none;
+  opacity:0.85;
+}
+
+.content{
+  position:relative;
+  z-index:10;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* subtle vignette */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background:radial-gradient(ellipse at center, transparent 40%, rgba(8,6,4,0.82) 100%);
+  pointer-events:none;
+  z-index:5;
+}
+
+/* subliminal thin horizontal line */
+body::before{
+  content:'';
+  position:fixed;top:33%;left:0;right:0;
+  height:1px;
+  background:rgba(232,224,208,0.04);
+  pointer-events:none;
+  z-index:6;
+}
+
+.logo{
+  font-size:clamp(4rem,18vw,6rem);
+  font-weight:800;
+  letter-spacing:-0.07em;
+  line-height:0.85;
+  color:var(--text);
+  transform:rotate(-0.4deg);
+  user-select:none;
+  /* text shadow depth */
+  text-shadow:0 0 80px rgba(200,40,30,0.12), 0 2px 0 rgba(0,0,0,0.6);
+  transition:text-shadow 0.3s;
+}
+.logo:hover{
+  text-shadow:0 0 120px rgba(200,40,30,0.22), 0 2px 0 rgba(0,0,0,0.6);
+}
+.logo em{
+  font-style:normal;
+  color:var(--red);
+  position:relative;
+}
+/* glitch flicker on logo em */
+.logo em::before{
+  content:'FEED';
+  position:absolute;left:2px;top:0;
+  color:#3B72E8;
+  opacity:0;
+  clip-path:inset(30% 0 50% 0);
+  animation:lglitch 8s infinite;
+  pointer-events:none;
+}
+@keyframes lglitch{
+  0%,94%,100%{opacity:0;transform:translateX(0)}
+  95%{opacity:0.55;transform:translateX(-3px)}
+  96%{opacity:0;transform:translateX(2px)}
+  97%{opacity:0.3;transform:translateX(1px)}
+  98%{opacity:0}
+}
+
+.tag{
+  font-family:'Courier Prime',monospace;
+  font-size:0.68rem;
+  letter-spacing:0.28em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-top:1.8rem;
+  /* character-by-character fade in */
+  animation:tfade 1.8s ease both;
+  animation-delay:0.4s;
+  opacity:0;
+}
+@keyframes tfade{to{opacity:1}}
+
+.divider{
+  width:32px;height:1px;
+  background:linear-gradient(90deg, transparent, var(--muted), transparent);
+  margin:1.4rem auto;
+  animation:tfade 1.8s ease both;
+  animation-delay:0.7s;
+  opacity:0;
+}
+
+.cta{
+  display:inline-block;
+  margin-top:0.5rem;
+  background:transparent;
+  color:var(--text);
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:0.8rem;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  border:1px solid rgba(232,224,208,0.22);
+  padding:0.95rem 3.2rem;
+  cursor:pointer;
+  border-radius:0;
+  text-decoration:none;
+  position:relative;
+  overflow:hidden;
+  transition:border-color 0.3s,color 0.3s;
+  animation:tfade 1.8s ease both;
+  animation-delay:1s;
+  opacity:0;
+}
+/* hover fill sweep */
+.cta::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:var(--red);
+  transform:translateX(-102%);
+  transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  z-index:-1;
+}
+.cta:hover::before{transform:translateX(0)}
+.cta:hover{border-color:var(--red);color:white}
+.cta:active{transform:scale(0.98)}
+
+.foot{
+  position:fixed;bottom:2rem;
+  font-family:'Courier Prime',monospace;
+  font-size:0.52rem;
+  color:var(--muted);
+  opacity:0.25;
+  letter-spacing:0.06em;
+  pointer-events:none;
+  z-index:10;
+}
+
+/* scroll hint at bottom */
+.scroll-hint{
+  position:fixed;bottom:3.5rem;
+  font-family:'Courier Prime',monospace;
+  font-size:0.5rem;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+  opacity:0;
+  z-index:10;
+  animation:shint 4s ease 2.5s infinite;
+}
+@keyframes shint{
+  0%,100%{opacity:0;transform:translateY(4px)}
+  30%,70%{opacity:0.3;transform:translateY(0)}
+}
+</style>
+</head>
+<body>
+
+<div id="p5-canvas"></div>
+
+<div class="content">
+  <div class="logo">THE<br><em>FEED</em></div>
+  <div class="tag">scroll to stay informed.</div>
+  <div class="divider"></div>
+  <a class="cta" href="feed.html">Enter</a>
+</div>
+
+<div class="scroll-hint">↓ enter the feed</div>
+<div class="foot">© 2025 THE FEED CORPORATION · ALL RIGHTS RESERVED</div>
+
+<script>
+new p5(function(s){
+  var particles=[];
+  var cols, rows;
+  var gridSpacing=28;
+  var glitchTimer=0;
+  var glitchActive=false;
+
+  s.setup=function(){
+    var cnv=s.createCanvas(s.windowWidth,s.windowHeight);
+    cnv.parent('p5-canvas');
+    s.colorMode(s.RGB,255,255,255,255);
+    cols=Math.floor(s.width/gridSpacing)+2;
+    rows=Math.floor(s.height/gridSpacing)+2;
+    // create grid particles
+    for(var i=0;i<cols;i++){
+      for(var j=0;j<rows;j++){
+        particles.push({
+          x:i*gridSpacing + s.random(-4,4),
+          y:j*gridSpacing + s.random(-4,4),
+          ox:i*gridSpacing,
+          oy:j*gridSpacing,
+          size:s.random(0.5,1.8),
+          alpha:s.random(12,55),
+          speed:s.random(0.003,0.012),
+          phase:s.random(s.TWO_PI),
+          drift:s.random(-0.15,0.15),
+          glitchOffset:0
+        });
+      }
+    }
+  };
+
+  s.draw=function(){
+    s.clear();
+    s.background(15,13,11,255);
+
+    glitchTimer++;
+    if(glitchTimer>s.random(180,360)){
+      glitchActive=true;
+      glitchTimer=0;
+    }
+    if(glitchActive&&glitchTimer>8){
+      glitchActive=false;
+    }
+
+    // draw faint grid lines first
+    s.stroke(255,255,255,4);
+    s.strokeWeight(0.3);
+    for(var i=0;i<=cols;i++){
+      s.line(i*gridSpacing,0,i*gridSpacing,s.height);
+    }
+    for(var j=0;j<=rows;j++){
+      s.line(0,j*gridSpacing,s.width,j*gridSpacing);
+    }
+
+    // draw particles
+    for(var p of particles){
+      p.phase+=p.speed;
+      p.x=p.ox+Math.sin(p.phase)*5+p.drift*s.frameCount*0.01;
+      p.y=p.oy+Math.cos(p.phase*0.7)*4;
+
+      // glitch: some particles jump
+      if(glitchActive&&s.random()<0.03){
+        p.glitchOffset=s.random(-18,18);
+      } else {
+        p.glitchOffset*=0.85;
+      }
+
+      var a=p.alpha+(glitchActive?s.random(-10,10):0);
+      a=s.constrain(a,5,80);
+
+      s.noStroke();
+      // core dot
+      s.fill(232,224,208,a);
+      s.ellipse(p.x+p.glitchOffset,p.y,p.size,p.size);
+
+      // occasional red ghost dot during glitch
+      if(glitchActive&&s.random()<0.015){
+        s.fill(200,40,30,35);
+        s.ellipse(p.x+p.glitchOffset*2,p.y,p.size*1.5,p.size*1.5);
+      }
+    }
+
+    // scan line sweep effect — very faint
+    var scanY=(s.frameCount*0.7)%s.height;
+    s.noStroke();
+    s.fill(232,224,208,3);
+    s.rect(0,scanY,s.width,2);
+  };
+
+  s.windowResized=function(){
+    s.resizeCanvas(s.windowWidth,s.windowHeight);
+  };
+});
+</script>
+
+</body>
+</html>
