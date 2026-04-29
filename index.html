@@ -4,310 +4,181 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>THE FEED</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Courier+Prime:wght@400;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0F0D0B;
-  --text:#E8E0D0;
-  --muted:#4A4642;
-  --red:#C8281E;
-  --accent:#C4A882;
+  --bg:#0F0D0B;--text:#E8E0D0;--muted:#4A4642;
+  --border:#1E1C1A;--red:#C8281E;
 }
-
 html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;max-width:390px;margin:0 auto;position:relative}
 
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:'Syne',sans-serif;
-  max-width:390px;
-  margin:0 auto;
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding:2rem 1.5rem;
-  text-align:center;
-  position:relative;
-  cursor:crosshair;
-}
+.bg-feed{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;
+  mask-image:linear-gradient(to bottom,transparent 0%,black 14%,black 86%,transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 14%,black 86%,transparent 100%)}
+.feed-track{animation:scrollUp 100s linear infinite;will-change:transform}
+@keyframes scrollUp{from{transform:translateY(0)}to{transform:translateY(-50%)}}
 
-/* p5 canvas sits behind everything */
-#p5-canvas{
-  position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
-  z-index:0;
-  pointer-events:none;
-  opacity:0.85;
-}
+.bg-post{opacity:0.32;border-bottom:1px solid rgba(30,28,26,0.6)}
+.bg-post-img{width:100%;height:180px;object-fit:cover;display:block;filter:grayscale(0.55) brightness(0.6) contrast(0.9)}
+.bg-post-meta{display:flex;align-items:center;gap:0.45rem;padding:0.55rem 1rem 0.6rem}
+.bg-av{width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#252220}
+.bg-av img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(0.4)}
+.bg-name{font-family:'Syne',sans-serif;font-weight:700;font-size:0.64rem;color:var(--text)}
+.bg-line{font-size:0.68rem;color:rgba(232,224,208,0.6);font-family:'DM Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.bg-line.brk{color:rgba(200,40,30,0.55);font-family:'Courier Prime',monospace;font-size:0.58rem}
+.bg-time{font-family:'Courier Prime',monospace;font-size:0.48rem;color:var(--muted);flex-shrink:0;margin-left:auto}
 
-.content{
-  position:relative;
-  z-index:10;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
+.overlay{position:fixed;inset:0;background:rgba(15,13,11,0.65);z-index:1;pointer-events:none}
+.vignette{position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 10%,rgba(8,6,4,0.95) 100%);z-index:2;pointer-events:none}
 
-/* subtle vignette */
-body::after{
-  content:'';
-  position:fixed;inset:0;
-  background:radial-gradient(ellipse at center, transparent 40%, rgba(8,6,4,0.82) 100%);
-  pointer-events:none;
-  z-index:5;
-}
+.center{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:2rem}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:5rem;letter-spacing:-0.07em;line-height:0.85;color:var(--text);text-align:center;transform:rotate(-0.4deg);user-select:none;text-shadow:0 0 60px rgba(200,40,30,0.12),0 2px 0 rgba(0,0,0,0.9);margin-bottom:0.3rem;animation:up 1.2s ease both}
+.logo em{font-style:normal;color:var(--red)}
+.tagline{font-family:'Courier Prime',monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:3rem;animation:up 1.4s ease both}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-/* subliminal thin horizontal line */
-body::before{
-  content:'';
-  position:fixed;top:33%;left:0;right:0;
-  height:1px;
-  background:rgba(232,224,208,0.04);
-  pointer-events:none;
-  z-index:6;
-}
+.notif-wrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:0.6rem;animation:up 1.6s ease both}
+.notif-btn{background:none;border:none;cursor:pointer;position:relative;padding:0;display:flex;align-items:center;justify-content:center}
+.bell{font-size:2rem;filter:drop-shadow(0 0 10px rgba(200,40,30,0.3));animation:shake 5s ease infinite;display:block}
+@keyframes shake{0%,80%,100%{transform:rotate(0)}82%{transform:rotate(-10deg)}84%{transform:rotate(10deg)}86%{transform:rotate(-6deg)}88%{transform:rotate(6deg)}90%{transform:rotate(0)}}
+.badge{position:absolute;top:-3px;right:-5px;background:var(--red);color:white;font-family:'Syne',sans-serif;font-weight:700;font-size:0.52rem;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);animation:pulse 2.5s ease infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,40,30,0.4)}50%{box-shadow:0 0 0 4px rgba(200,40,30,0)}}
+.bell-label{font-family:'Courier Prime',monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase}
 
-.logo{
-  font-size:clamp(4rem,18vw,6rem);
-  font-weight:800;
-  letter-spacing:-0.07em;
-  line-height:0.85;
-  color:var(--text);
-  transform:rotate(-0.4deg);
-  user-select:none;
-  /* text shadow depth */
-  text-shadow:0 0 80px rgba(200,40,30,0.12), 0 2px 0 rgba(0,0,0,0.6);
-  transition:text-shadow 0.3s;
-}
-.logo:hover{
-  text-shadow:0 0 120px rgba(200,40,30,0.22), 0 2px 0 rgba(0,0,0,0.6);
-}
-.logo em{
-  font-style:normal;
-  color:var(--red);
-  position:relative;
-}
-/* glitch flicker on logo em */
-.logo em::before{
-  content:'FEED';
-  position:absolute;left:2px;top:0;
-  color:#3B72E8;
-  opacity:0;
-  clip-path:inset(30% 0 50% 0);
-  animation:lglitch 8s infinite;
-  pointer-events:none;
-}
-@keyframes lglitch{
-  0%,94%,100%{opacity:0;transform:translateX(0)}
-  95%{opacity:0.55;transform:translateX(-3px)}
-  96%{opacity:0;transform:translateX(2px)}
-  97%{opacity:0.3;transform:translateX(1px)}
-  98%{opacity:0}
-}
+.dropdown{position:absolute;bottom:calc(100% + 0.9rem);left:50%;transform:translateX(-50%) translateY(8px);width:265px;background:#181614;border:1px solid #2A2826;opacity:0;pointer-events:none;transition:opacity 0.2s,transform 0.2s;box-shadow:0 -6px 24px rgba(0,0,0,0.7)}
+.dropdown.open{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
+.dd-head{padding:0.5rem 0.85rem;border-bottom:1px solid #242220;display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-weight:700;font-size:0.68rem;color:var(--text)}
+.dd-head span{font-family:'Courier Prime',monospace;font-size:0.5rem;color:var(--red)}
+.dd-item{padding:0.55rem 0.85rem;border-bottom:1px solid rgba(36,34,32,0.5);display:flex;align-items:flex-start;gap:0.45rem;cursor:pointer;transition:background 0.12s}
+.dd-item:hover{background:rgba(255,255,255,0.02)}
+.dd-av{width:26px;height:26px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#242220}
+.dd-av img{width:100%;height:100%;object-fit:cover;display:block}
+.dd-av.ico{display:flex;align-items:center;justify-content:center;font-size:0.75rem;background:#1A1816}
+.dd-txt{flex:1;font-size:0.66rem;line-height:1.5;font-family:'DM Sans',sans-serif;color:rgba(232,224,208,0.8)}
+.dd-txt strong{font-family:'Syne',sans-serif;font-size:0.67rem;color:var(--text)}
+.dd-time{font-family:'Courier Prime',monospace;font-size:0.49rem;color:var(--muted);display:block;margin-top:0.06rem}
+.dd-dot{width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:5px}
+.dd-item.about{background:rgba(200,40,30,0.04);border-left:2px solid rgba(200,40,30,0.22)}
+.dd-item.about:hover{background:rgba(200,40,30,0.07)}
+.dd-item.about .dd-txt{color:rgba(232,224,208,0.55)}
+.dd-item.about .dd-txt strong{color:var(--red)}
+.dd-enter{display:block;width:100%;padding:0.68rem 1rem;background:rgba(200,40,30,0.07);border-top:1px solid rgba(200,40,30,0.15);font-family:'Courier Prime',monospace;font-size:0.58rem;color:var(--red);text-align:center;letter-spacing:0.06em;cursor:pointer;transition:background 0.12s;text-decoration:none}
+.dd-enter:hover{background:rgba(200,40,30,0.14)}
 
-.tag{
-  font-family:'Courier Prime',monospace;
-  font-size:0.68rem;
-  letter-spacing:0.28em;
-  text-transform:uppercase;
-  color:var(--muted);
-  margin-top:1.8rem;
-  /* character-by-character fade in */
-  animation:tfade 1.8s ease both;
-  animation-delay:0.4s;
-  opacity:0;
-}
-@keyframes tfade{to{opacity:1}}
-
-.divider{
-  width:32px;height:1px;
-  background:linear-gradient(90deg, transparent, var(--muted), transparent);
-  margin:1.4rem auto;
-  animation:tfade 1.8s ease both;
-  animation-delay:0.7s;
-  opacity:0;
-}
-
-.cta{
-  display:inline-block;
-  margin-top:0.5rem;
-  background:transparent;
-  color:var(--text);
-  font-family:'Syne',sans-serif;
-  font-weight:700;
-  font-size:0.8rem;
-  letter-spacing:0.18em;
-  text-transform:uppercase;
-  border:1px solid rgba(232,224,208,0.22);
-  padding:0.95rem 3.2rem;
-  cursor:pointer;
-  border-radius:0;
-  text-decoration:none;
-  position:relative;
-  overflow:hidden;
-  transition:border-color 0.3s,color 0.3s;
-  animation:tfade 1.8s ease both;
-  animation-delay:1s;
-  opacity:0;
-}
-/* hover fill sweep */
-.cta::before{
-  content:'';
-  position:absolute;
-  inset:0;
-  background:var(--red);
-  transform:translateX(-102%);
-  transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);
-  z-index:-1;
-}
-.cta:hover::before{transform:translateX(0)}
-.cta:hover{border-color:var(--red);color:white}
-.cta:active{transform:scale(0.98)}
-
-.foot{
-  position:fixed;bottom:2rem;
-  font-family:'Courier Prime',monospace;
-  font-size:0.52rem;
-  color:var(--muted);
-  opacity:0.25;
-  letter-spacing:0.06em;
-  pointer-events:none;
-  z-index:10;
-}
-
-/* scroll hint at bottom */
-.scroll-hint{
-  position:fixed;bottom:3.5rem;
-  font-family:'Courier Prime',monospace;
-  font-size:0.5rem;
-  letter-spacing:0.14em;
-  text-transform:uppercase;
-  color:var(--muted);
-  opacity:0;
-  z-index:10;
-  animation:shint 4s ease 2.5s infinite;
-}
-@keyframes shint{
-  0%,100%{opacity:0;transform:translateY(4px)}
-  30%,70%{opacity:0.3;transform:translateY(0)}
-}
+.about-overlay{position:fixed;inset:0;z-index:50;background:rgba(4,3,2,0.85);backdrop-filter:blur(10px);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.28s}
+.about-overlay.open{opacity:1;pointer-events:all}
+.about-inner{width:100%;max-width:390px;margin:0 auto;background:#141210;border-top:1px solid #2A2826;border-left:3px solid var(--red);padding:1.3rem 1.2rem 3rem;transform:translateY(20px);transition:transform 0.28s;max-height:85vh;overflow-y:auto}
+.about-overlay.open .about-inner{transform:translateY(0)}
+.a-close{float:right;background:none;border:none;cursor:pointer;color:var(--muted);font-family:'Courier Prime',monospace;font-size:0.9rem;transition:color 0.12s;padding:0}
+.a-close:hover{color:var(--text)}
+.a-label{font-family:'Courier Prime',monospace;font-size:0.52rem;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem}
+.a-dot{width:4px;height:4px;border-radius:50%;background:var(--red);animation:adot 1.2s step-end infinite}
+@keyframes adot{0%,100%{opacity:1}50%{opacity:0}}
+.a-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:var(--text);margin-bottom:0.12rem;letter-spacing:-0.03em}
+.a-sub{font-family:'Courier Prime',monospace;font-size:0.58rem;color:var(--muted);margin-bottom:1rem}
+.a-body{font-family:'DM Sans',sans-serif;font-size:0.82rem;line-height:1.82;color:rgba(232,224,208,0.7)}
+.a-body p{margin-bottom:0.7rem}
+.a-body p:last-child{margin-bottom:0}
+.a-credit{font-family:'Courier Prime',monospace;font-size:0.6rem;color:var(--muted);border-top:1px solid #242220;padding-top:0.8rem;margin-top:1rem;line-height:1.8}
+.a-credit strong{color:rgba(184,152,104,0.8)}
 </style>
 </head>
 <body>
 
-<div id="p5-canvas"></div>
+<div class="bg-feed">
+  <div class="feed-track" id="track"></div>
+</div>
+<div class="overlay"></div>
+<div class="vignette"></div>
 
-<div class="content">
+<div class="center">
   <div class="logo">THE<br><em>FEED</em></div>
-  <div class="tag">scroll to stay informed.</div>
-  <div class="divider"></div>
-  <a class="cta" href="feed.html">Enter</a>
+  <div class="tagline">your personalized reality</div>
+
+  <div class="notif-wrap">
+    <div class="dropdown" id="dd">
+      <div class="dd-head">Notifications <span>5 NEW</span></div>
+      <div class="dd-item">
+        <div class="dd-dot"></div>
+        <div class="dd-av"><img src="https://i.pravatar.cc/52?img=11" alt=""></div>
+        <div class="dd-txt"><strong>jose_fl</strong> posted from Minneapolis. Content may be limited in your region.<span class="dd-time">12 min ago</span></div>
+      </div>
+      <div class="dd-item">
+        <div class="dd-dot"></div>
+        <div class="dd-av"><img src="https://i.pravatar.cc/52?img=3" alt=""></div>
+        <div class="dd-txt"><strong>maya_r</strong> shared a post. 3.4K people engaged.<span class="dd-time">1 hr ago</span></div>
+      </div>
+      <div class="dd-item">
+        <div class="dd-av"><img src="https://i.pravatar.cc/52?img=22" alt=""></div>
+        <div class="dd-txt"><strong>resist_now</strong> — account under platform review.<span class="dd-time">3 hr ago</span></div>
+      </div>
+      <div class="dd-item">
+        <div class="dd-av ico">📢</div>
+        <div class="dd-txt" style="color:rgba(200,40,30,0.5)">Your feed has been updated to reflect regional content policies.<span class="dd-time" style="color:#282420">just now</span></div>
+      </div>
+      <div class="dd-item about" onclick="openAbout()">
+        <div class="dd-av ico">ⓘ</div>
+        <div class="dd-txt"><strong>THE FEED — About this project</strong>A message from the creator.<span class="dd-time" style="color:rgba(200,40,30,0.4)">pinned</span></div>
+      </div>
+      <a class="dd-enter" href="feed.html">Open Feed →</a>
+    </div>
+
+    <button class="notif-btn" id="bellBtn" onclick="toggleDD()">
+      <span class="bell">🔔</span>
+      <span class="badge">5</span>
+    </button>
+    <div class="bell-label">tap to open</div>
+  </div>
 </div>
 
-<div class="scroll-hint">↓ enter the feed</div>
-<div class="foot">© 2025 THE FEED CORPORATION · ALL RIGHTS RESERVED</div>
+<div class="about-overlay" id="aboutOv" onclick="if(event.target===this)closeAbout()">
+  <div class="about-inner">
+    <button class="a-close" onclick="closeAbout()">✕</button>
+    <div class="a-label"><div class="a-dot"></div>PINNED · CREATOR MESSAGE</div>
+    <div class="a-title">THE FEED</div>
+    <div class="a-sub">Spring 2026</div>
+    <div class="a-body">
+      <p>The Feed is an interactive web experience that simulates a social media platform — and then slowly breaks it apart.</p>
+      <p>As you scroll, content disappears. Accounts get flagged. Captions are redacted mid-sentence. The platform turns on the people using it — which is exactly what real platforms already do.</p>
+      <p>This project responds to the documented suppression of voices discussing immigration enforcement, Black maternal healthcare, gender-based violence, and political accountability. The jose_fl posts reference real events: Operation Metro Surge and the killings of Renée Good and Alex Pretti by federal agents in Minneapolis in January 2026. Both were US citizens. Both were filmed. Video contradicted official accounts in both cases.</p>
+      <p>This is for anyone who has ever posted something true and watched it quietly disappear.</p>
+    </div>
+    <div class="a-credit"><strong>Creator:</strong> Seneca Moore<br> IML - 300 · Project 3</div>
+  </div>
+</div>
 
 <script>
-new p5(function(s){
-  var particles=[];
-  var cols, rows;
-  var gridSpacing=28;
-  var glitchTimer=0;
-  var glitchActive=false;
-
-  s.setup=function(){
-    var cnv=s.createCanvas(s.windowWidth,s.windowHeight);
-    cnv.parent('p5-canvas');
-    s.colorMode(s.RGB,255,255,255,255);
-    cols=Math.floor(s.width/gridSpacing)+2;
-    rows=Math.floor(s.height/gridSpacing)+2;
-    // create grid particles
-    for(var i=0;i<cols;i++){
-      for(var j=0;j<rows;j++){
-        particles.push({
-          x:i*gridSpacing + s.random(-4,4),
-          y:j*gridSpacing + s.random(-4,4),
-          ox:i*gridSpacing,
-          oy:j*gridSpacing,
-          size:s.random(0.5,1.8),
-          alpha:s.random(12,55),
-          speed:s.random(0.003,0.012),
-          phase:s.random(s.TWO_PI),
-          drift:s.random(-0.15,0.15),
-          glitchOffset:0
-        });
-      }
-    }
-  };
-
-  s.draw=function(){
-    s.clear();
-    s.background(15,13,11,255);
-
-    glitchTimer++;
-    if(glitchTimer>s.random(180,360)){
-      glitchActive=true;
-      glitchTimer=0;
-    }
-    if(glitchActive&&glitchTimer>8){
-      glitchActive=false;
-    }
-
-    // draw faint grid lines first
-    s.stroke(255,255,255,4);
-    s.strokeWeight(0.3);
-    for(var i=0;i<=cols;i++){
-      s.line(i*gridSpacing,0,i*gridSpacing,s.height);
-    }
-    for(var j=0;j<=rows;j++){
-      s.line(0,j*gridSpacing,s.width,j*gridSpacing);
-    }
-
-    // draw particles
-    for(var p of particles){
-      p.phase+=p.speed;
-      p.x=p.ox+Math.sin(p.phase)*5+p.drift*s.frameCount*0.01;
-      p.y=p.oy+Math.cos(p.phase*0.7)*4;
-
-      // glitch: some particles jump
-      if(glitchActive&&s.random()<0.03){
-        p.glitchOffset=s.random(-18,18);
-      } else {
-        p.glitchOffset*=0.85;
-      }
-
-      var a=p.alpha+(glitchActive?s.random(-10,10):0);
-      a=s.constrain(a,5,80);
-
-      s.noStroke();
-      // core dot
-      s.fill(232,224,208,a);
-      s.ellipse(p.x+p.glitchOffset,p.y,p.size,p.size);
-
-      // occasional red ghost dot during glitch
-      if(glitchActive&&s.random()<0.015){
-        s.fill(200,40,30,35);
-        s.ellipse(p.x+p.glitchOffset*2,p.y,p.size*1.5,p.size*1.5);
-      }
-    }
-
-    // scan line sweep effect — very faint
-    var scanY=(s.frameCount*0.7)%s.height;
-    s.noStroke();
-    s.fill(232,224,208,3);
-    s.rect(0,scanY,s.width,2);
-  };
-
-  s.windowResized=function(){
-    s.resizeCanvas(s.windowWidth,s.windowHeight);
-  };
+var posts=[
+  {u:"jose_fl",t:"8m",img:"https://picsum.photos/seed/mpls-street-01/390/180",av:"https://i.pravatar.cc/44?img=11",line:"I watched them kill Alex Pretti on Nicollet Ave. He was holding his phone."},
+  {u:"maya_r",t:"22m",img:"https://picsum.photos/seed/hospital-indy-02/390/180",av:"https://i.pravatar.cc/44?img=3",line:"She was 9 centimeters dilated. They handed her discharge papers."},
+  {u:"sasha.eats",t:"31m",img:"https://picsum.photos/seed/food-city-03/390/180",av:"https://i.pravatar.cc/44?u=sasha",line:"Finally tried that new spot on 5th. Highly recommend."},
+  {u:"local_news_7",t:"44m",img:"https://picsum.photos/seed/news-crowd-04/390/180",av:"https://i.pravatar.cc/44?u=news7",line:"BREAKING — School attendance drops 40% across Minneapolis.",brk:true},
+  {u:"m.reyes_photos",t:"1h",img:"https://picsum.photos/seed/lake-golden-05/390/180",av:"https://i.pravatar.cc/44?u=reyes",line:"Golden hour at the lake. This city never gets old."},
+  {u:"resist_now",t:"1h",img:"https://picsum.photos/seed/protest-street-06/390/180",av:"https://i.pravatar.cc/44?img=22",line:"Three weeks I've posted the dataset. Three weeks it disappears."},
+  {u:"everyday.fit",t:"2h",img:"https://picsum.photos/seed/run-park-07/390/180",av:"https://i.pravatar.cc/44?u=fit",line:"Morning run streak: day 47."},
+  {u:"truth_doc",t:"2h",img:"https://picsum.photos/seed/neighborhood-08/390/180",av:"https://i.pravatar.cc/44?img=17",line:"Named after a coffee shop. Redlined for decades. News moved on in four hours."},
+  {u:"coffeethoughts",t:"3h",img:"https://picsum.photos/seed/window-rain-09/390/180",av:"https://i.pravatar.cc/44?u=coffee",line:"Reading at the window while it rains."},
+  {u:"city_desk",t:"3h",img:"https://picsum.photos/seed/city-hall-10/390/180",av:"https://i.pravatar.cc/44?u=citydesk",line:"BREAKING — Federal agents deployed across six metro areas.",brk:true},
+  {u:"fern_writes",t:"5h",img:"https://picsum.photos/seed/paper-desk-11/390/180",av:"https://i.pravatar.cc/44?u=fern",line:"Women who publish the data get removed. The accounts they document keep growing."},
+  {u:"home.by.nina",t:"4h",img:"https://picsum.photos/seed/interior-12/390/180",av:"https://i.pravatar.cc/44?u=nina",line:"Finally finished the living room. Six months of slow progress."},
+];
+var all=posts.concat(posts);
+var track=document.getElementById('track');
+all.forEach(function(p){
+  var d=document.createElement('div');
+  d.className='bg-post';
+  d.innerHTML='<img class="bg-post-img" src="'+p.img+'" alt="" loading="lazy"><div class="bg-post-meta"><div class="bg-av"><img src="'+p.av+'" alt=""></div><span class="bg-name">'+p.u+'</span><span class="bg-line'+(p.brk?' brk':'')+'" >'+p.line+'</span><span class="bg-time">'+p.t+'</span></div>';
+  track.appendChild(d);
+});
+function toggleDD(){document.getElementById('dd').classList.toggle('open')}
+function openAbout(){document.getElementById('dd').classList.remove('open');document.getElementById('aboutOv').classList.add('open')}
+function closeAbout(){document.getElementById('aboutOv').classList.remove('open')}
+document.addEventListener('click',function(e){
+  var btn=document.getElementById('bellBtn'),dd=document.getElementById('dd');
+  if(!btn.contains(e.target)&&!dd.contains(e.target))dd.classList.remove('open');
 });
 </script>
-
 </body>
 </html>
